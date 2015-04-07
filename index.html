@@ -1,46 +1,140 @@
 <html>
 <head>
 	<title>Chat</title>
+	<link rel="stylesheet" type="text/css" href="css/main.css">
 	<style>
-	#chat{
-		height: 300px;
+	html {
+		font: 13px "Trebuchet MS", sans-serif;
+	}
+
+	.wrapper{
+		max-width: 400px;	
+	}
+
+	#chat,#message,#submit
+	{
+		border:1px solid #bbb;
+	}
+
+	.chat {
+		
+		height: 400px;
+		overflow-y: scroll;
+		padding: 10px;
+	}
+
+/*.chat-message {
+	margin-bottom: 20px;
+	}*/
+
+	.chat-name {
+		width: 100%;
+		padding: 10px;
+		border-bottom: 0;
+		margin: 0;
+	}
+
+	#message{
+		width: 100%;
+		padding: 10px;
+		margin: 0;
+		border-top: 0;
+		max-width: 100%;
+	}
+
+	.chat-status{
+		color: #bbb;
+	}
+	#chat,#message
+	{
+		outline: none;
+	}
+	#contentWrap{
+		display: none;
+	}
+	#chatWrap{
+		float: left;
 	}
 	</style>
 </head>
 
 
 <body>
+	<div class="wrapper">
 
-	<div id="chat"></div>
-	<form id="send-message">
-		<input size = "35" id="message" ></input>
-		<input type = "submit"></input>
-	</form>
+		<div id="nickWrap">
+			<p >Enter a username: </p>
+			<p id="nickError"> </p>
+			<form id="setNick">
+				<input size="35" id="nickname"/>
+				<input type="submit" />
+			</form>
+		</div>
 
-	<script src="http://code.jquery.com/jquery-latest.min.js"></script>
-	<script src="/socket.io/socket.io.js"></script>
-	
-	<script>
-	jQuery(function($){
-		var socket = io.connect();
-		var $messageForm = $('#send-message');
-		var $messageBox = $('#message');
-		var $chat = $('#chat');
 
-		$messageForm.submit(function(e){
-			e.preventDefault();
-			socket.emit('send message',$messageBox.val());
-			$messageBox.val('');
+	<div id="contentWrap">
+		<div id="chatWrap">
+			<div id="chat" class ="chat"></div>
+			<form id="send-message">
+				<input size = "35" id="message" />
+				<input type = "submit"></input>
+			</form>
+		</div>
+		<div id="users"></div>
+	</div>
+		<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+		
+		<script>
+		jQuery(function($){
+			var socket = io.connect();
+			var $messageForm = $('#send-message');
+			var $messageBox = $('#message');
+			var $chat = $('#chat');
+
+			var $users = $('#users');
+			var $nickForm = $('#setNick');
+			var $nickError = $('#nickError');
+			var $nickBox = $('#nickname');
+
+			$nickForm.submit(function(e){
+				e.preventDefault();
+				socket.emit('new user', $nickBox.val(), function(data){
+					if(data){
+						$('#nickWrap').hide();
+						$('#contentWrap').show();
+					}else{
+						$nickError.html('That Username is taken, Try again');
+					}
+
+				});
+				$nickBox.val('');
 			});
 
-		socket.on('new message',function(data){
-			$chat.append(data+ "<br/>");
-		});
+			socket.on('usernames',function(data){
+				var html = '';
+				for(i=0; i< data.length; i++){
+					html += data[i] + '<br/>';
+				}
+				$users.html(html);
+			});
+
+
+			$messageForm.submit(function(e){
+				e.preventDefault();
+				socket.emit('send message',$messageBox.val());
+				$messageBox.val('');
+			});
+
+			socket.on('new message',function(data){
+				$chat.append('<b>'+ data.nick+': </b>' +data.msg+ "<br/>");
+			});
 
 
 		});
-	</script>
+		</script>
 
+	</div>
 
 </body>
 </html>
